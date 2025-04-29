@@ -47,7 +47,15 @@ export default function MusicPlayer({ musics }: { musics: Music[] }) {
           opts={{
             width: "100%",
             height: "100%",
-            playerVars: { autoplay: 1 },
+            host: "https://www.youtube-nocookie.com",
+            playerVars: {
+              autoplay: 1,
+              rel: 0,
+              origin:
+                typeof window !== "undefined"
+                  ? window.location.origin
+                  : undefined,
+            },
           }}
           onEnd={handleEnd}
           className="absolute top-0 left-0 w-full h-full"
