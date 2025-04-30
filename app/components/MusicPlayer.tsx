@@ -1,11 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import YouTube, { YouTubeProps, YouTubePlayer } from "react-youtube";
-import {
-  motion,
-  AnimationDefinition,
-  TargetAndTransition,
-} from "framer-motion";
+import { motion, TargetAndTransition } from "framer-motion";
 
 // Musicインターフェース（変更なし）
 export interface Music {
@@ -130,7 +126,7 @@ export default function MusicPlayer({ musics }: { musics: Music[] }) {
       }
     }
   };
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAnimationComplete = (
     _definition: TargetAndTransition | string | string[]
   ) => {
