@@ -1,7 +1,11 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import YouTube, { YouTubeProps, YouTubePlayer } from "react-youtube";
-import { motion } from "framer-motion"; // ★ Framer Motion をインポート
+import {
+  motion,
+  AnimationDefinition,
+  TargetAndTransition,
+} from "framer-motion";
 
 // Musicインターフェース（変更なし）
 export interface Music {
@@ -33,15 +37,16 @@ export default function MusicPlayer({ musics }: { musics: Music[] }) {
   const playerRef = useRef<YouTubePlayer | null>(null);
   const nextVideoInfo = useRef<{ music: Music; id: string } | null>(null);
 
-  const getRandomMusic = (): Music | null => {
+  const getRandomMusic = useCallback((): Music | null => {
     if (musics.length === 0) return null;
+    // useCallback の依存配列に musics が含まれる
     return musics[Math.floor(Math.random() * musics.length)];
-  };
+  }, [musics]); // ★ 依存配列に musics を指定
 
   useEffect(() => {
     const first = getRandomMusic();
     if (first) setCurrent(first);
-  }, [musics]);
+  }, [getRandomMusic]);
 
   if (!current) return <div className="p-8 font-sans">Loading...</div>;
 
@@ -126,18 +131,15 @@ export default function MusicPlayer({ musics }: { musics: Music[] }) {
     }
   };
 
-  const handleAnimationComplete = (definition: any) => {
-    // definition は animate プロパティのターゲットオブジェクト
-    // 縮小アニメーション（isTransitioningがtrueの時）が完了した場合のみ処理
+  const handleAnimationComplete = (
+    _definition: TargetAndTransition | string | string[]
+  ) => {
+    // ★ definition を使わないのでアンダースコア始まりにする
     if (isTransitioning && nextVideoInfo.current && playerRef.current) {
       const { music, id } = nextVideoInfo.current;
-      // ★ アニメーション完了後に動画をロードし、状態を更新
       playerRef.current.loadVideoById(id);
       setCurrent(music);
-      // ★ Refをクリア
       nextVideoInfo.current = null;
-      // この後、onStateChangeで再生開始が検知され、isTransitioningがfalseになり
-      // 拡大アニメーションが始まることを期待
     }
   };
 
