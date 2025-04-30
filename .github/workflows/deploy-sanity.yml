@@ -22,10 +22,10 @@ jobs:
 
       - name: Install Sanity CLI and dependencies
         run: npm install
-        working-directory: ./sanity
+        working-directory: .
 
       - name: Deploy Sanity Studio
         run: npx sanity deploy
-        working-directory: ./sanity
+        working-directory: .
         env:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
