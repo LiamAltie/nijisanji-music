@@ -16,7 +16,6 @@ export const liver = defineType({
       title: "Group",
       type: "array",
       of: [{ type: "reference", to: [{ type: "group" }] }],
-      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: "color",
