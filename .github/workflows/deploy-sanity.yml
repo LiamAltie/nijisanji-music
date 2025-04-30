@@ -25,7 +25,7 @@ jobs:
         working-directory: .
 
       - name: Deploy Sanity Studio
-        run: npx sanity deploy
+        run: npx sanity deploy --non-interactive
         working-directory: .
         env:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
