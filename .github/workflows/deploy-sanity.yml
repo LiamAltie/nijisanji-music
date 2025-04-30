@@ -1,6 +1,12 @@
 name: Deploy Sanity Studio on Change
 
 on:
+  workflow_dispatch:
+    inputs:
+      exampleInput:
+        description: "Sanity.ioへのデプロイ"
+        required: false
+        default: ""
   push:
     branches:
       - main
