@@ -14,13 +14,24 @@ const client = createClient({
 const musicQuery = `*[_type == "music"]{
   _id,
   songName,
+  originalName,
   youtubeUrl,
   performance,
   category,
-  singers[]->{ _id, name, profileImage{ asset->{url} } }
+  singers[]->{
+    _id,
+    name,
+    color,
+    twitter,
+    youtube,
+    profileImage {
+      asset-> {
+        url
+      }
+    }
+  }
 }`;
 
-// クライアントコンポーネントを動的インポート（SSR無効）
 const MusicPlayer = dynamic(() => import("./components/MusicPlayer"), {
   ssr: false,
 });
@@ -28,7 +39,7 @@ const MusicPlayer = dynamic(() => import("./components/MusicPlayer"), {
 export default async function Page() {
   const musics = await client.fetch(musicQuery);
   return (
-    <div className="max-w-screen-xl mx-auto border p-4">
+    <div className="">
       <MusicPlayer musics={musics} />
     </div>
   );
