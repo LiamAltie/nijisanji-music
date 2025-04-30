@@ -57,7 +57,7 @@ export default function MusicPlayer({ musics }: { musics: Music[] }) {
   const opts: YouTubeProps["opts"] = {
     width: "100%",
     height: "100%",
-    host: "https://www.youtube-nocookie.com",
+    //host: "https://www.youtube-nocookie.com",
     playerVars: {
       autoplay: 1,
       rel: 0,
