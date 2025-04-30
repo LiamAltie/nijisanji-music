@@ -13,7 +13,7 @@ export const music = defineType({
     }),
     defineField({
       name: "originalName",
-      title: "動画タイトル名 ",
+      title: "動画タイトル名",
       type: "string",
       validation: (Rule) => Rule.required(),
     }),
