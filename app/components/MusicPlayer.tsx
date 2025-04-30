@@ -126,7 +126,6 @@ export default function MusicPlayer({ musics }: { musics: Music[] }) {
       }
     }
   };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAnimationComplete = (
     _definition: TargetAndTransition | string | string[]
   ) => {
