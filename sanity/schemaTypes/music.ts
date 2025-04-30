@@ -12,6 +12,12 @@ export const music = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: "originalName",
+      title: "動画タイトル名",
+      type: "string",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: "youtubeUrl",
       title: "YouTube 動画 URL",
       type: "url",

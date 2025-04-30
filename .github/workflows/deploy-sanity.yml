@@ -1,0 +1,31 @@
+name: Deploy Sanity Studio on Change
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "sanity/**"
+      - "app/studio/**"
+
+jobs:
+  deploy-sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Sanity CLI and dependencies
+        run: npm install
+        working-directory: ./sanity
+
+      - name: Deploy Sanity Studio
+        run: npx sanity deploy
+        working-directory: ./sanity
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
