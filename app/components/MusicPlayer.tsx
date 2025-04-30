@@ -31,11 +31,6 @@ export interface Music {
   singers: Singer[];
 }
 
-// コンポーネントのProps型 (これを使うコンポーネントで定義)
-interface SingerListProps {
-  singers: Singer[];
-}
-
 // YouTube Player State (参考)
 enum PlayerState {
   UNSTARTED = -1,
