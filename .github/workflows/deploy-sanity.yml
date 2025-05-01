@@ -2,21 +2,16 @@ name: Deploy Sanity Studio on Change
 
 on:
   workflow_dispatch:
-    inputs:
-      exampleInput:
-        description: "Sanity.ioへのデプロイ"
-        required: false
-        default: ""
   push:
     branches:
       - main
     paths:
       - "sanity/**"
-      - "app/studio/**"
 
 jobs:
   deploy-sanity:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,11 +23,9 @@ jobs:
 
       - name: Install Sanity CLI and dependencies
         run: npm install
-        working-directory: .
 
       - name: Deploy Sanity Studio
         run: npx sanity deploy --non-interactive
-        working-directory: .
         env:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
           SANITY_STUDIO_PROJECT_ID: ${{ secrets.SANITY_STUDIO_PROJECT_ID }}
