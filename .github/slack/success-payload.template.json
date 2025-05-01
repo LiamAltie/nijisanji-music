@@ -4,14 +4,14 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": ":white_check_mark: Workflow *$WORKFLOW_NAME* completed successfully."
+        "text": ":white_check_mark: ワークフロー： *$WORKFLOW_NAME* が成功しました。"
       }
     },
     {
       "type": "section",
       "fields": [
-        { "type": "mrkdwn", "text": "*Repository:*\n$REPOSITORY" },
-        { "type": "mrkdwn", "text": "*Branch:*\n$REF_NAME" }
+        { "type": "mrkdwn", "text": "*リポジトリ:*\n$REPOSITORY" },
+        { "type": "mrkdwn", "text": "*ブランチ:*\n$REF_NAME" }
       ]
     },
     {
@@ -21,7 +21,7 @@
           "type": "button",
           "text": {
             "type": "plain_text",
-            "text": "View Workflow Run"
+            "text": "ワークフローを確認する"
           },
           "url": "$RUN_URL"
         }

@@ -4,16 +4,16 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": ":rocket: Workflow *$WORKFLOW_NAME* started."
+        "text": ":rocket: ワークフロー： *$WORKFLOW_NAME* が開始されました。"
       }
     },
     {
       "type": "section",
       "fields": [
-        { "type": "mrkdwn", "text": "*Repository:*\n$REPOSITORY" },
-        { "type": "mrkdwn", "text": "*Branch:*\n$REF_NAME" },
-        { "type": "mrkdwn", "text": "*Triggered by:*\n$ACTOR" },
-        { "type": "mrkdwn", "text": "*Event:*\n$EVENT_NAME" }
+        { "type": "mrkdwn", "text": "*リポジトリ:*\n$REPOSITORY" },
+        { "type": "mrkdwn", "text": "*ブランチ:*\n$REF_NAME" },
+        { "type": "mrkdwn", "text": "実行者:*\n$ACTOR" },
+        { "type": "mrkdwn", "text": "*イベント:*\n$EVENT_NAME" }
       ]
     },
     {
@@ -23,7 +23,7 @@
           "type": "button",
           "text": {
             "type": "plain_text",
-            "text": "View Workflow Run"
+            "text": "ワークフローを確認する"
           },
           "url": "$RUN_URL"
         }
