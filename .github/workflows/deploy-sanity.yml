@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - "sanity/**"
+      - ".github/slack/**"
 
 jobs:
   deploy-sanity:
@@ -15,6 +16,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Prepare Slack Notification Vars
+        id: prep_vars
+        run: |
+          echo "WORKFLOW_NAME=${{ github.workflow }}" >> $GITHUB_ENV
+          echo "REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
+          echo "REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "ACTOR=${{ github.actor }}" >> $GITHUB_ENV
+          echo "EVENT_NAME=${{ github.event_name }}" >> $GITHUB_ENV
+          echo "RUN_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
+          # Add any other variables needed in your templates
+
+      - name: Notify Slack - Workflow Started
+        id: slack_start
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            $(envsubst < .github/slack/start-payload.template.json)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -30,3 +52,21 @@ jobs:
           SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
           SANITY_STUDIO_PROJECT_ID: ${{ secrets.SANITY_STUDIO_PROJECT_ID }}
           SANITY_STUDIO_DATASET: ${{ secrets.SANITY_STUDIO_DATASET }}
+
+      - name: Notify Slack - Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            $(envsubst < .github/slack/success-payload.template.json)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack - Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            $(envsubst < .github/slack/failure-payload.template.json)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

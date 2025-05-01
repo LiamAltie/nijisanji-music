@@ -1,0 +1,33 @@
+{
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":rocket: Workflow *$WORKFLOW_NAME* started."
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        { "type": "mrkdwn", "text": "*Repository:*\n$REPOSITORY" },
+        { "type": "mrkdwn", "text": "*Branch:*\n$REF_NAME" },
+        { "type": "mrkdwn", "text": "*Triggered by:*\n$ACTOR" },
+        { "type": "mrkdwn", "text": "*Event:*\n$EVENT_NAME" }
+      ]
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "View Workflow Run"
+          },
+          "url": "$RUN_URL"
+        }
+      ]
+    }
+  ]
+}

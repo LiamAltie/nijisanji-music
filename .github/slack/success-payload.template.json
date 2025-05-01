@@ -1,0 +1,31 @@
+{
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":white_check_mark: Workflow *$WORKFLOW_NAME* completed successfully."
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        { "type": "mrkdwn", "text": "*Repository:*\n$REPOSITORY" },
+        { "type": "mrkdwn", "text": "*Branch:*\n$REF_NAME" }
+      ]
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "View Workflow Run"
+          },
+          "url": "$RUN_URL"
+        }
+      ]
+    }
+  ]
+}
