@@ -1,12 +1,11 @@
 import { createClient } from "next-sanity";
 import dynamic from "next/dynamic";
 
-// ISR のリバリデート間隔（秒）
 export const revalidate = 60;
 
 const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "",
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "",
+  projectId: process.env.SANITY_STUDIO_PROJECT_ID || "",
+  dataset: process.env.SANITY_STUDIO_DATASET || "",
   apiVersion: "2024-01-01",
   useCdn: true,
 });
