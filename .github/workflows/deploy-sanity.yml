@@ -1,4 +1,4 @@
-name: Deploy Sanity Studio on Change
+name: Sanity Studioへのデプロイ
 
 on:
   workflow_dispatch:
