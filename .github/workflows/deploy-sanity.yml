@@ -29,16 +29,16 @@ jobs:
       - name: Generate Slack Start Payload
         id: slack_payload_start
         run: |
-          JSON_PAYLOAD=$(envsubst < .github/slack/start-payload.template.json | jq -c .)
+          JSON_PAYLOAD=$(envsubst < '.github/slack/start-payload.template.json' | jq -c .)
+          if [ -z "$JSON_PAYLOAD" ]; then echo "Error: Generated JSON payload is empty."; exit 1; fi
           echo "payload=$JSON_PAYLOAD" >> $GITHUB_OUTPUT
 
-      - name: Notify Slack - Workflow Started
+      - name: Notify Slack - Workflow Started (using curl)
         if: always()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: ${{ steps.slack_payload_start.outputs.payload }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '${{ steps.slack_payload_start.outputs.payload }}' \
+          '${{ secrets.SLACK_WEBHOOK_URL }}'
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -59,28 +59,28 @@ jobs:
         id: slack_payload_success
         if: success()
         run: |
-          JSON_PAYLOAD=$(envsubst < .github/slack/success-payload.template.json | jq -c .)
+          JSON_PAYLOAD=$(envsubst < '.github/slack/success-payload.template.json' | jq -c .)
+          if [ -z "$JSON_PAYLOAD" ]; then echo "Error: Generated JSON payload is empty."; exit 1; fi
           echo "payload=$JSON_PAYLOAD" >> $GITHUB_OUTPUT
 
-      - name: Notify Slack - Success
+      - name: Notify Slack - Success (using curl)
         if: success()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: ${{ steps.slack_payload_success.outputs.payload }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '${{ steps.slack_payload_success.outputs.payload }}' \
+          '${{ secrets.SLACK_WEBHOOK_URL }}'
 
       - name: Generate Slack Failure Payload
         id: slack_payload_failure
         if: failure()
         run: |
-          JSON_PAYLOAD=$(envsubst < .github/slack/failure-payload.template.json | jq -c .)
+          JSON_PAYLOAD=$(envsubst < '.github/slack/failure-payload.template.json' | jq -c .)
+          if [ -z "$JSON_PAYLOAD" ]; then echo "Error: Generated JSON payload is empty."; exit 1; fi
           echo "payload=$JSON_PAYLOAD" >> $GITHUB_OUTPUT
 
-      - name: Notify Slack - Failure
+      - name: Notify Slack - Failure (using curl)
         if: failure()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: ${{ steps.slack_payload_failure.outputs.payload }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '${{ steps.slack_payload_failure.outputs.payload }}' \
+          '${{ secrets.SLACK_WEBHOOK_URL }}'
