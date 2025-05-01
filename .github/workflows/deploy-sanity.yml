@@ -1,3 +1,14 @@
+name: Deploy Sanity Studio on Change
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "sanity/**"
+      - ".github/slack/**"
+
 jobs:
   deploy-sanity:
     runs-on: ubuntu-latest
@@ -14,18 +25,11 @@ jobs:
           echo "ACTOR='${{ github.actor }}'" >> $GITHUB_ENV
           echo "EVENT_NAME='${{ github.event_name }}'" >> $GITHUB_ENV
           echo "RUN_URL='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'" >> $GITHUB_ENV
-          # Add any other variables needed in your templates
 
       - name: Generate Slack Start Payload
         id: slack_payload_start
         run: |
-          # envsubstで置換し、jq -c でJSONを検証＆コンパクト化
           JSON_PAYLOAD=$(envsubst < .github/slack/start-payload.template.json | jq -c .)
-
-          # デバッグ用に生成されたJSONをログに出力 (オプション)
-          echo "Generated JSON: $JSON_PAYLOAD" 
-
-          # 結果をoutputsに設定
           echo "payload=$JSON_PAYLOAD" >> $GITHUB_OUTPUT
 
       - name: Notify Slack - Workflow Started
@@ -35,6 +39,21 @@ jobs:
           payload: ${{ steps.slack_payload_start.outputs.payload }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Sanity CLI and dependencies
+        run: npm install
+
+      - name: Deploy Sanity Studio
+        run: npx sanity deploy --non-interactive
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_AUTH_TOKEN }}
+          SANITY_STUDIO_PROJECT_ID: ${{ secrets.SANITY_STUDIO_PROJECT_ID }}
+          SANITY_STUDIO_DATASET: ${{ secrets.SANITY_STUDIO_DATASET }}
 
       - name: Generate Slack Success Payload
         id: slack_payload_success
