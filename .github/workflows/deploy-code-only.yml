@@ -1,0 +1,42 @@
+name: Deploy Lambda Code Only
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/YourGitHubActionsDeployRole
+          aws-region: ap-northeast-1
+
+      - name: Install Dependencies in root
+        run: npm install --omit=dev
+
+      - name: Create Deployment Package
+        run: |
+          cp lambdaFunctions/getLiverYouTube.mjs getLiverYouTube.mjs
+          zip -r deployment-package.zip getLiverYouTube.mjs node_modules/ -x ".git/*" ".github/*"
+
+      - name: Deploy to Lambda
+        run: >
+          aws lambda update-function-code
+          --function-name getLiverYouTube
+          --zip-file fileb://deployment-package.zip
