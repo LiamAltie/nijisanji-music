@@ -42,6 +42,6 @@ jobs:
       - name: Deploy to Lambda referencing S3 object
         run: >
           aws lambda update-function-code
-          --function-name your-lambda-function-name
+          --function-name getLiverYouTube
           --s3-bucket ${{ secrets.S3_DEPLOYMENT_BUCKET }}
           --s3-key lambda-packages/getLiverYouTube-${{ github.sha }}.zip
