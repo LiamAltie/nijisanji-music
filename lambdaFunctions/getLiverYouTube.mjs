@@ -109,7 +109,7 @@ async function clearTable() {
   console.log(
     `────────── テーブル全件削除完了: ${DDB_TABLE_NAME} (合計 ${totalDeletedCount} 件削除) ──────────\n`
   );
-  process.exit(0); // 処理終了
+  //process.exit(0); // 処理終了
 }
 
 // ——————————————————————————————————
@@ -209,7 +209,7 @@ async function describeTableSchema() {
   console.log(
     `────────── テーブルスキーマ表示完了: ${DDB_TABLE_NAME} ──────────\n`
   );
-  process.exit(0); // 処理終了
+  //process.exit(0); // 処理終了
 }
 
 // ——————————————————————————————————
@@ -965,13 +965,32 @@ async function main() {
   }
 }
 
-// --- スクリプト実行 (変更なし) ---
+export const lambdaHandler = async (event, context) => {
+  console.log("Lambda function started.");
+  try {
+    await main();
+    console.log("Main processing finished successfully.");
+    return {
+      statusCode: 200,
+      body: JSON.stringify("Processing finished successfully!"),
+    };
+  } catch (error) {
+    console.error("Error during main processing:", error);
+    throw error;
+  } finally {
+    console.log("Lambda function finished.");
+  }
+};
+
+// --- 以下のコマンドライン実行部分は削除またはコメントアウト ---
+/*
 if (process.argv.includes("--clear-table")) {
   // clearTable().catch(...)
 } else if (process.argv.includes("--list-items")) {
   // listItems().catch(...)
 } else if (process.argv.includes("--describe-schema")) {
-  // describeTableSchema().catch(...)
+    // describeTableSchema().catch(...)
 } else {
   main(); // main 内で catch されるのでここでは catch 不要
 }
+*/
