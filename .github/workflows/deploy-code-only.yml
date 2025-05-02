@@ -35,8 +35,13 @@ jobs:
           cp lambdaFunctions/getLiverYouTube.mjs getLiverYouTube.mjs
           zip -r deployment-package.zip getLiverYouTube.mjs node_modules/ -x ".git/*" ".github/*"
 
-      - name: Deploy to Lambda
+      - name: Upload package to S3
+        run: |
+          aws s3 cp deployment-package.zip s3://${{ secrets.S3_DEPLOYMENT_BUCKET }}/lambda-packages/getLiverYouTube-${{ github.sha }}.zip
+
+      - name: Deploy to Lambda referencing S3 object
         run: >
           aws lambda update-function-code
-          --function-name getLiverYouTube
-          --zip-file fileb://deployment-package.zip
+          --function-name your-lambda-function-name
+          --s3-bucket ${{ secrets.S3_DEPLOYMENT_BUCKET }}
+          --s3-key lambda-packages/getLiverYouTube-${{ github.sha }}.zip
