@@ -1,0 +1,14 @@
+{
+  "name": "get-liver-youtube-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function to fetch YouTube videos",
+  "main": "getLiverYouTube.mjs",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.799.0",
+    "@aws-sdk/lib-dynamodb": "^3.799.0",
+    "@sanity/client": "^6.xxx.x",
+    "axios": "^7.0.0",
+    "dotenv": "^16.5.0"
+  }
+}
