@@ -46,12 +46,6 @@ const sanity = createClient({
 
 // --- AWS SDK v3 DynamoDB Client 初期化 ---
 const awsConfig = { region: AWS_REGION };
-if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY) {
-  awsConfig.credentials = {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  };
-}
 const ddbClient = new DynamoDBClient(awsConfig);
 const ddb = DynamoDBDocumentClient.from(ddbClient);
 
@@ -899,12 +893,12 @@ async function main() {
             {
               type: "button",
               text: { type: "plain_text", text: "タスクに追加", emoji: true },
-              style: "primary", // ボタンのスタイル (primary, danger)
-              action_id: "add_youtube_task", // このIDでボタン押下を識別
-              // value にタスク化に必要な情報をJSON文字列で埋め込む
+              style: "primary",
+              action_id: "add_youtube_task",
+
               value: JSON.stringify({
                 videoId: video.videoId,
-                title: video.title, // エスケープ前のタイトル
+                title: video.title,
                 channelName: video.channelName,
                 publishedAt: video.publishedAt,
                 videoUrl: videoUrl,
@@ -926,7 +920,6 @@ async function main() {
       `YouTube新着動画チェック完了 (${totalNewVideoCount}件の新着)`
     );
   } catch (error) {
-    // ③ 失敗通知
     console.error("\nメイン処理の実行中に致命的なエラーが発生しました:", error);
     const errorBlocks = [
       {
@@ -944,16 +937,10 @@ async function main() {
           text: `処理中にエラーが発生しました。\n*エラーメッセージ:*\n\`\`\`${error.message || "不明なエラー"}\`\`\``,
         },
       },
-      // エラースタックも表示する場合 (長くなる可能性あり)
-      // {
-      //   type: "section",
-      //   text: { type: "mrkdwn", text: `*スタックトレース:*\n\`\`\`${error.stack || 'スタックトレースなし'}\`\`\`` }
-      // }
     ];
     await sendSlackNotification(errorBlocks, "YouTube新着動画チェック処理失敗");
-    process.exit(1); // エラーで終了
+    process.exit(1);
   } finally {
-    // 最終的なコンソール出力 (変更なし)
     const endTime = Date.now();
     const durationMinutes = ((endTime - startTime) / 60000).toFixed(2);
     console.log("\n========= 最終結果 (コンソール) =========");
