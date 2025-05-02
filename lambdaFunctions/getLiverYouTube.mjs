@@ -46,12 +46,6 @@ const sanity = createClient({
 
 // --- AWS SDK v3 DynamoDB Client 初期化 ---
 const awsConfig = { region: AWS_REGION };
-if (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY) {
-  awsConfig.credentials = {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  };
-}
 const ddbClient = new DynamoDBClient(awsConfig);
 const ddb = DynamoDBDocumentClient.from(ddbClient);
 
