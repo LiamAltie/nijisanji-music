@@ -47,14 +47,12 @@ export const liver = defineType({
       description:
         "YouTubeのチャンネルID（例: UCkhViRjLUKgIcVpar9JiNrw）。'UC'で始まる24文字のIDを入力してください。",
       validation: (Rule) =>
-        Rule.required()
-          .regex(/^UC[a-zA-Z0-9_-]{22}$/, {
-            name: "youtube_channel_id",
-            invert: false,
-          })
-          .error(
-            "チャンネルIDの形式が正しくありません。'UC'で始まる24文字の英数字、ハイフン、アンダースコアで構成されている必要があります。"
-          ),
+        Rule.regex(/^UC[a-zA-Z0-9_-]{22}$/, {
+          name: "youtube_channel_id",
+          invert: false,
+        }).error(
+          "チャンネルIDの形式が正しくありません。'UC'で始まる24文字の英数字、ハイフン、アンダースコアで構成されている必要があります。"
+        ),
     }),
     defineField({
       name: "profileImage",
