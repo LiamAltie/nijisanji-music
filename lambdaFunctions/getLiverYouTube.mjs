@@ -18,22 +18,22 @@ dotenv.config({ path: resolve(__dirname, "../.env.local") });
 const SANITY_STUDIO_PROJECT_ID = process.env.SANITY_STUDIO_PROJECT_ID;
 const SANITY_STUDIO_DATASET = process.env.SANITY_STUDIO_DATASET;
 const SANITY_API_TOKEN = process.env.SANITY_API_TOKEN;
-const SANITY_API_VERSION = "2025-04-29"; // 日付は固定
+const SANITY_API_VERSION = "2025-04-29";
 
 const AWS_REGION = process.env.AWS_REGION || "ap-northeast-1";
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const DDB_TABLE_NAME = process.env.DDB_TABLE_NAME || "YouTubeChannelVideos";
 
-const DEFAULT_LAST_AT = "1970-01-01T00:00:00Z"; // 最終取得日時のデフォルト値
-const RETENTION_SECONDS = 60 * 60 * 24 * 7; // DynamoDB TTL (7日間)
+const DEFAULT_LAST_AT = "1970-01-01T00:00:00Z";
+const RETENTION_SECONDS = 60 * 60 * 24 * 7;
 const YT_API_KEY = process.env.YOUTUBE_API_KEY;
 const YT_API_URL = "https://www.googleapis.com/youtube/v3";
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
 
 // --- グローバル変数 ---
-let quotaUsed = 0; // YouTube API の使用クオータ数
-const allNewVideos = []; // 処理全体で新しく追加された動画リスト
+let quotaUsed = 0;
+const allNewVideos = [];
 
 // --- Sanity Client 初期化 ---
 const sanity = createClient({
@@ -50,7 +50,7 @@ const ddbClient = new DynamoDBClient(awsConfig);
 const ddb = DynamoDBDocumentClient.from(ddbClient);
 
 // ——————————————————————————————————
-// DynamoDB テーブルの全項目を削除する (ユーティリティ)
+// DynamoDB テーブルの全項目を削除する
 // ——————————————————————————————————
 async function clearTable() {
   console.log(
@@ -83,7 +83,6 @@ async function clearTable() {
       },
     }));
 
-    // バッチ書き込み (最大25件ずつ)
     for (let i = 0; i < deleteRequests.length; i += 25) {
       const batch = deleteRequests.slice(i, i + 25);
       const batchWriteParams = {
@@ -95,7 +94,6 @@ async function clearTable() {
         totalDeletedCount += batch.length;
       } catch (error) {
         console.error("  バッチ削除エラー:", error);
-        // 必要に応じてリトライ処理などを追加
       }
     }
   } while (ExclusiveStartKey);
@@ -151,7 +149,6 @@ async function listItems() {
     return;
   }
 
-  // 投稿日時で降順ソート
   allItems.sort((a, b) => {
     const dateA = a.publishedAt || DEFAULT_LAST_AT;
     const dateB = b.publishedAt || DEFAULT_LAST_AT;
@@ -221,7 +218,7 @@ async function fetchChannelsFromSanity() {
     return channels;
   } catch (error) {
     console.error("Sanity からのチャンネル取得に失敗しました:", error);
-    return []; // エラー時は空配列を返す
+    return [];
   }
 }
 
@@ -261,14 +258,12 @@ async function updateSanityChannelId(documentId, channelId) {
 async function resolveChannelIdFromUrl(url) {
   if (!url) return null;
 
-  // パターン1: /channel/UC...
   let match = url.match(/\/channel\/([a-zA-Z0-9_-]+)/);
   if (match) {
     console.log(`チャンネルID形式を検出: ${match[1]}`);
     return match[1];
   }
 
-  // パターン2: /user/... (非推奨だが古い形式)
   match = url.match(/\/user\/([a-zA-Z0-9_-]+)/);
   if (match) {
     const username = match[1];
@@ -276,7 +271,7 @@ async function resolveChannelIdFromUrl(url) {
       `ユーザー名形式を検出: ${username}。チャンネルIDを検索します...`
     );
     try {
-      quotaUsed += 1; // channels.list API コスト: 1
+      quotaUsed += 1;
       console.log(
         `  [API] channels.list (forUsername=${username}) を実行 (+1 クオータ)`
       );
@@ -305,13 +300,12 @@ async function resolveChannelIdFromUrl(url) {
     }
   }
 
-  // パターン3: /@handle
   match = url.match(/\/@([a-zA-Z0-9_.-]+)/);
   if (match) {
     const handle = match[1];
     console.log(`ハンドル形式を検出: @${handle}。チャンネルIDを検索します...`);
     try {
-      quotaUsed += 100; // search.list API コスト: 100
+      quotaUsed += 100;
       console.log(
         `  [API] search.list (q=@${handle}, type=channel) を実行 (+100 クオータ)`
       );
@@ -319,7 +313,7 @@ async function resolveChannelIdFromUrl(url) {
         params: {
           key: YT_API_KEY,
           part: "snippet",
-          q: `@${handle}`, // ハンドルを検索クエリに使用
+          q: `@${handle}`,
           type: "channel",
           maxResults: 1,
         },
@@ -341,16 +335,14 @@ async function resolveChannelIdFromUrl(url) {
     }
   }
 
-  // パターン4: /c/CustomName (古いカスタムURL)
   match = url.match(/\/c\/([a-zA-Z0-9_-]+)/);
   if (match) {
     const customName = match[1];
     console.log(
       `カスタムURL形式 (/c/) を検出: ${customName}。チャンネルIDを検索します...`
     );
-    // カスタムURLはハンドルと同様の検索で試みる (確実ではない)
     try {
-      quotaUsed += 100; // search.list API コスト: 100
+      quotaUsed += 100;
       console.log(
         `  [API] search.list (q=${customName}, type=channel) を実行 (+100 クオータ)`
       );
@@ -386,25 +378,19 @@ async function resolveChannelIdFromUrl(url) {
   return null;
 }
 
-// (1/2 からの続き)
-
 // ——————————————————————————————————
 // ISO 8601 形式の動画再生時間を秒数に変換する
 // ——————————————————————————————————
 function parseISO8601Duration(duration) {
   if (!duration || typeof duration !== "string" || !duration.startsWith("PT")) {
-    // 不正な形式の場合は 0 を返すか、エラー処理を行う (ここでは 0 を返す)
-    // 時間(H)や日(D)が含まれる場合はShortsではないと判断し、61秒以上として扱う
     if (duration && (duration.includes("H") || duration.includes("D"))) {
-      return 61; // 60秒より大きい値（例: 61）を返し、Shorts判定から除外
+      return 61;
     }
     return 0;
   }
-  // PT[nM][nS] の形式をパース (時間や日は無視し、分と秒のみ考慮)
   const regex = /PT(?:(\d+)M)?(?:(\d+)S)?/;
   const matches = duration.match(regex);
   if (!matches) {
-    // HやDがないが、MやSもない場合（例: PT）は0秒とする
     return 0;
   }
   const minutes = parseInt(matches[1] || "0", 10);
@@ -419,9 +405,8 @@ async function fetchLatestVideos(channelId) {
   console.log(`  チャンネル (${channelId}) の最新動画を取得します...`);
   let channelUploadsPlaylistId = null;
 
-  // 1. チャンネル情報からアップロード再生リストIDを取得
   try {
-    quotaUsed += 1; // channels.list API コスト: 1
+    quotaUsed += 1;
     console.log(
       `    [API] channels.list (part=contentDetails, id=${channelId}) を実行 (+1 クオータ)`
     );
@@ -447,19 +432,18 @@ async function fetchLatestVideos(channelId) {
       `    チャンネル情報 (${channelId}) の取得中にエラー:`,
       error.response?.data || error.message
     );
-    return []; // エラー時は空リストを返す
+    return [];
   }
 
-  // 2. アップロード再生リストから動画アイテムを取得 (最大3ページ = 約150件まで)
   const playlistItems = [];
   let nextPageToken = null;
-  const maxPages = 3; // 取得する最大ページ数
+  const maxPages = 3;
   console.log(
     `    再生リスト (${channelUploadsPlaylistId}) のアイテムを取得します (最大 ${maxPages} ページ)...`
   );
   for (let page = 1; page <= maxPages; page++) {
     try {
-      quotaUsed += 1; // playlistItems.list API コスト: 1
+      quotaUsed += 1;
       console.log(
         `      [API] playlistItems.list (ページ ${page}) を実行 (+1 クオータ)`
       );
@@ -467,8 +451,8 @@ async function fetchLatestVideos(channelId) {
         params: {
           key: YT_API_KEY,
           playlistId: channelUploadsPlaylistId,
-          part: "snippet", // videoId, title, publishedAt を含む
-          maxResults: 50, // 1ページあたり最大50件
+          part: "snippet",
+          maxResults: 50,
           pageToken: nextPageToken,
         },
       });
@@ -482,14 +466,14 @@ async function fetchLatestVideos(channelId) {
       nextPageToken = plResponse.data.nextPageToken;
       if (!nextPageToken) {
         console.log("      最終ページに到達しました。");
-        break; // 次のページがない場合はループ終了
+        break;
       }
     } catch (error) {
       console.error(
         `    再生リストアイテム取得中にエラー (ページ ${page}):`,
         error.response?.data || error.message
       );
-      break; // エラーが発生したら取得を中断
+      break;
     }
   }
   console.log(
@@ -498,7 +482,6 @@ async function fetchLatestVideos(channelId) {
 
   if (playlistItems.length === 0) return [];
 
-  // 3. 動画IDリストを作成し、動画詳細情報 (ライブ配信有無、再生時間) を取得
   const videoIds = Array.from(
     new Set(
       playlistItems
@@ -506,8 +489,8 @@ async function fetchLatestVideos(channelId) {
         .filter(Boolean)
     )
   );
-  const videoDetailsMap = new Map(); // videoId をキーとして詳細情報を格納
-  const liveVideoIds = new Set(); // ライブ配信だった動画のIDセット
+  const videoDetailsMap = new Map();
+  const liveVideoIds = new Set();
 
   console.log(
     `    取得した ${videoIds.length} 件の動画の詳細情報 (ライブ配信、再生時間) を取得します...`
@@ -515,7 +498,7 @@ async function fetchLatestVideos(channelId) {
   for (let i = 0; i < videoIds.length; i += 50) {
     const batchIds = videoIds.slice(i, i + 50);
     try {
-      quotaUsed += 1; // videos.list API コスト: 1 (ID指定は50個まで1クオータ)
+      quotaUsed += 1;
       console.log(
         `      [API] videos.list (バッチ ${i / 50 + 1}) を実行 (+1 クオータ)`
       );
@@ -523,13 +506,12 @@ async function fetchLatestVideos(channelId) {
         params: {
           key: YT_API_KEY,
           id: batchIds.join(","),
-          part: "liveStreamingDetails,contentDetails", // ライブ配信情報とコンテント詳細 (再生時間含む)
+          part: "liveStreamingDetails,contentDetails",
         },
       });
 
       (vResponse.data.items || []).forEach((video) => {
         videoDetailsMap.set(video.id, video);
-        // liveStreamingDetails が存在すればライブ配信 (アーカイブ含む)
         if (video.liveStreamingDetails) {
           liveVideoIds.add(video.id);
         }
@@ -539,14 +521,12 @@ async function fetchLatestVideos(channelId) {
         `    動画詳細情報取得中にエラー (バッチ ${i / 50 + 1}):`,
         error.response?.data || error.message
       );
-      // エラーが発生しても処理を続行するが、該当バッチの動画情報は取得できない
     }
   }
   console.log(
     `    動画詳細情報の取得完了。ライブ配信動画 ${liveVideoIds.size} 件を検出。`
   );
 
-  // 4. フィルタリング: ライブ配信を除外し、Shorts動画 (タイトル or 再生時間) を除外
   const filteredVideos = [];
   console.log("    動画をフィルタリングします (ライブ配信、Shortsを除外)...");
   for (const item of playlistItems) {
@@ -554,40 +534,30 @@ async function fetchLatestVideos(channelId) {
     const title = item.snippet?.title;
     const publishedAt = item.snippet?.publishedAt;
 
-    if (!videoId || !title || !publishedAt) continue; // 必須情報がないものはスキップ
+    if (!videoId || !title || !publishedAt) continue;
 
-    // ライブ配信だった動画を除外
     if (liveVideoIds.has(videoId)) {
-      // console.log(`      除外 (ライブ配信): ${title} (${videoId})`);
       continue;
     }
 
-    // タイトルに #shorts (大文字小文字問わず) が含まれるものを除外
     if (title.toLowerCase().includes("#shorts")) {
-      // console.log(`      除外 (タイトルShorts): ${title} (${videoId})`);
       continue;
     }
 
-    // 再生時間でShortsを除外 (60秒以下)
     const details = videoDetailsMap.get(videoId);
     const duration = details?.contentDetails?.duration;
     if (duration) {
       const durationInSeconds = parseISO8601Duration(duration);
       if (durationInSeconds > 0 && durationInSeconds <= 60) {
-        // console.log(`      除外 (再生時間Shorts): ${title} (${videoId}), ${durationInSeconds}秒`);
         continue;
       }
     } else {
-      // 再生時間情報が取得できなかった場合 (APIエラーなど) は念のため残すか、除外するか選択
-      // console.warn(`      警告: 動画 ${videoId} の再生時間不明。フィルタリングをスキップします。`);
     }
 
-    // 上記フィルタを通過した動画を追加
     filteredVideos.push({ videoId, title, publishedAt });
   }
   console.log(`    フィルタリング後の動画数: ${filteredVideos.length} 件`);
 
-  // 5. 投稿日時で降順ソートし、最新10件に絞る (APIからの取得順が新しいとは限らないため)
   return filteredVideos
     .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
     .slice(0, 10);
@@ -603,11 +573,11 @@ async function fetchLastNotifiedPublishedAt(channelId) {
   try {
     const queryParams = {
       TableName: DDB_TABLE_NAME,
-      IndexName: "ChannelPublishedAtIndex", // GSI を使用
+      IndexName: "ChannelPublishedAtIndex",
       KeyConditionExpression: "channelId = :cid",
       ExpressionAttributeValues: { ":cid": channelId },
-      ScanIndexForward: false, // publishedAt で降順ソート
-      Limit: 1, // 最新の1件のみ取得
+      ScanIndexForward: false,
+      Limit: 1,
     };
     const { Items } = await ddb.send(new QueryCommand(queryParams));
 
@@ -619,14 +589,14 @@ async function fetchLastNotifiedPublishedAt(channelId) {
       console.log(
         `    DynamoDB に ${channelId} の記録が見つかりません。デフォルト値を返します。`
       );
-      return DEFAULT_LAST_AT; // 記録がない場合はデフォルト日時を返す
+      return DEFAULT_LAST_AT;
     }
   } catch (error) {
     console.error(
       `  DynamoDB から最終通知日時の取得中にエラー (${channelId}):`,
       error
     );
-    return DEFAULT_LAST_AT; // エラー時もデフォルト日時を返す
+    return DEFAULT_LAST_AT;
   }
 }
 
@@ -644,22 +614,21 @@ async function recordNewVideosToDynamoDB(channelName, channelId, videos) {
     `  チャンネル (${channelId}) の新規動画 ${videos.length} 件を DynamoDB に記録します...`
   );
   const nowEpoch = Math.floor(Date.now() / 1000);
-  const ttl = nowEpoch + RETENTION_SECONDS; // 現在時刻 + 保持期間 (秒)
+  const ttl = nowEpoch + RETENTION_SECONDS;
 
   const putRequests = videos.map((video) => ({
     PutRequest: {
       Item: {
         channelId: channelId,
         videoId: video.videoId,
-        name: channelName, // Sanity から取得したチャンネル名
+        name: channelName,
         title: video.title,
         publishedAt: video.publishedAt,
-        ttl: ttl, // TTL (Time To Live) 属性
+        ttl: ttl,
       },
     },
   }));
 
-  // バッチ書き込み (最大25件ずつ)
   for (let i = 0; i < putRequests.length; i += 25) {
     const batch = putRequests.slice(i, i + 25);
     const batchWriteParams = {
@@ -670,7 +639,6 @@ async function recordNewVideosToDynamoDB(channelName, channelId, videos) {
       console.log(`    DynamoDB バッチ書き込み成功: ${batch.length} 件`);
     } catch (error) {
       console.error("    DynamoDB バッチ書き込みエラー:", error);
-      // 必要に応じてリトライ処理などを追加
     }
   }
 }
@@ -683,14 +651,13 @@ async function sendSlackNotification(blocks, textFallback) {
     console.log("Slack Webhook URL が未設定のため、通知をスキップします。");
     return;
   }
-  // フォールバックテキストがない場合は、blocksから簡易的に生成試みる
   const fallback =
     textFallback || (blocks && blocks[0]?.text?.text) || "Slack 通知";
 
   try {
     await axios.post(SLACK_WEBHOOK_URL, {
-      text: fallback, // 通知テキスト (プレーンテキスト)
-      blocks: blocks, // Block Kit blocks
+      text: fallback,
+      blocks: blocks,
     });
     console.log("Slack への通知が成功しました。");
   } catch (error) {
@@ -701,15 +668,13 @@ async function sendSlackNotification(blocks, textFallback) {
   }
 }
 
-// (notifySlack 関数は削除)
-
 // ——————————————————————————————————
 // メイン処理: チャンネル情報を取得し、各チャンネルの最新動画を確認・記録・通知する
 // ——————————————————————————————————
 async function main() {
   const startTime = Date.now();
-  let processedChannelCount = 0; // 処理したチャンネル数
-  let totalNewVideoCount = 0; // 全体の新規動画数
+  let processedChannelCount = 0;
+  let totalNewVideoCount = 0;
 
   // ① 実行開始通知
   await sendSlackNotification(
@@ -732,7 +697,6 @@ async function main() {
       console.log(
         "処理対象のチャンネルが Sanity に登録されていません。処理を終了します。"
       );
-      // 成功通知 (チャンネル0件)
       await sendSlackNotification(
         [
           {
@@ -763,11 +727,9 @@ async function main() {
       console.log(
         `\n--- チャンネル処理開始: ${channelName} (Sanity Doc ID: ${sanityDocId}) ---`
       );
-      processedChannelCount++; // 処理開始したチャンネル数をカウント
+      processedChannelCount++;
 
       try {
-        // (チャンネルID解決、最終通知日時取得、最新動画取得のロジックは変更なし)
-        // ... (省略) ...
         if (!currentChannelId && youtubeUrl) {
           console.log(
             `  YouTube URL (${youtubeUrl}) からチャンネルIDを解決します...`
@@ -793,11 +755,9 @@ async function main() {
         console.log(`  新規動画 ${newVideos.length} 件を検出しました。`);
 
         if (newVideos.length > 0) {
-          totalNewVideoCount += newVideos.length; // 総新規動画数を加算
-          // 新規動画情報をグローバル変数 or main関数スコープの変数に格納
+          totalNewVideoCount += newVideos.length;
           newVideos.forEach((video) => {
             allNewVideos.push({
-              // allNewVideos は main の外で定義されている想定
               channelName: channelName,
               channelId: currentChannelId,
               title: video.title,
@@ -806,27 +766,21 @@ async function main() {
             });
           });
 
-          // DynamoDB に記録 (変更なし)
           await recordNewVideosToDynamoDB(
             channelName,
             currentChannelId,
             newVideos
           );
-
-          // Slackへの個別通知は削除
-          // await notifySlack(channelName, newVideos);
         }
       } catch (error) {
         console.error(
           `チャンネル (${channelName} / ${currentChannelId || "ID不明"}) の処理中にエラーが発生しました:`,
           error
         );
-        // エラーが発生しても次のチャンネルの処理を続ける
-        // 必要であれば、ここでチャンネルごとのエラーをSlack通知することも可能
       } finally {
         console.log(`--- チャンネル処理終了: ${channelName} ---`);
       }
-    } // チャンネルループ終了
+    }
 
     console.log(`\n────────── 全チャンネルの処理が完了 ──────────`);
 
@@ -858,13 +812,11 @@ async function main() {
     });
     successBlocks.push({ type: "divider" });
 
-    // 新規動画リストとボタン
     if (allNewVideos.length > 0) {
       successBlocks.push({
         type: "section",
         text: { type: "mrkdwn", text: "*新着動画リスト*" },
       });
-      // 新しい順にソート
       allNewVideos.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
       allNewVideos.forEach((video) => {
         const publishedDate = new Date(video.publishedAt).toLocaleString(
@@ -877,7 +829,6 @@ async function main() {
           .replace(/</g, "<")
           .replace(/>/g, ">");
 
-        // 動画情報セクション
         successBlocks.push({
           type: "section",
           text: {
@@ -886,7 +837,6 @@ async function main() {
           },
         });
 
-        // タスク追加ボタンアクション
         successBlocks.push({
           type: "actions",
           elements: [

@@ -2,13 +2,12 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
     "@typescript-eslint/no-unused-vars": [
-      "error", // または "warn"
+      "error",
       {
-        "argsIgnorePattern": "^_", // これを追加または確認
-        "varsIgnorePattern": "^_", // 必要であれば変数も
-        "caughtErrorsIgnorePattern": "^_" // 必要であればcatch句も
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
       }
     ]
-    // 他のルール...
   }
 }
